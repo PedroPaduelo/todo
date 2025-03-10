@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react'
-import { Trash2, Edit, Check, X, Calendar } from 'lucide-react'
+import { Trash2, Edit, Check, X, Calendar, Plus } from 'lucide-react'
+
+interface SubItem {
+  id: string
+  text: string
+  completed: boolean
+}
 
 interface Todo {
   id: string
   text: string
   completed: boolean
   dueDate: Date
+  completionDate: Date | null
+  subItems: SubItem[]
 }
 
 const formatDate = (date: Date): string => {
@@ -38,14 +46,47 @@ export default function App() {
   const [todos, setTodos] = useState<Todo[]>([])
   const [input, setInput] = useState('')
   const [dueDate, setDueDate] = useState(formatDate(new Date()))
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [newTodoText, setNewTodoText] = useState('')
+  const [newTodoDueDate, setNewTodoDueDate] = useState(formatDate(new Date()))
+  const [newTodoSubItems, setNewTodoSubItems] = useState<string[]>([])
+  const [currentSubItemInput, setCurrentSubItemInput] = useState('')
 
   useEffect(() => {
     // Add test todos
     const testTodos: Todo[] = [
-      { id: '1', text: 'Overdue task', completed: false, dueDate: new Date(Date.now() - 86400000) },
-      { id: '2', text: 'Task due today', completed: false, dueDate: new Date() },
-      { id: '3', text: 'Upcoming task', completed: false, dueDate: new Date(Date.now() + 86400000) },
-      { id: '4', text: 'Completed task', completed: true, dueDate: new Date() },
+      {
+        id: '1',
+        text: 'Overdue task',
+        completed: false,
+        dueDate: new Date(Date.now() - 86400000),
+        completionDate: null,
+        subItems: [{ id: '1-1', text: 'Sub-item 1', completed: false }],
+      },
+      {
+        id: '2',
+        text: 'Task due today',
+        completed: false,
+        dueDate: new Date(),
+        completionDate: null,
+        subItems: [],
+      },
+      {
+        id: '3',
+        text: 'Upcoming task',
+        completed: false,
+        dueDate: new Date(Date.now() + 86400000),
+        completionDate: null,
+        subItems: [],
+      },
+      {
+        id: '4',
+        text: 'Completed task',
+        completed: true,
+        dueDate: new Date(),
+        completionDate: new Date(),
+        subItems: [],
+      },
     ]
     setTodos(testTodos)
   }, [])
@@ -53,15 +94,33 @@ export default function App() {
   const addTodo = (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim()) return
-    setTodos([...todos, { id: Date.now().toString(), text: input.trim(), completed: false, dueDate: new Date(dueDate) }])
+    setTodos([
+      ...todos,
+      {
+        id: Date.now().toString(),
+        text: input.trim(),
+        completed: false,
+        dueDate: new Date(dueDate),
+        completionDate: null,
+        subItems: [],
+      },
+    ])
     setInput('')
     setDueDate(formatDate(new Date()))
   }
 
   const toggleTodo = (id: string) => {
-    setTodos(todos.map(todo => 
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    ))
+    setTodos(
+      todos.map(todo =>
+        todo.id === id
+          ? {
+              ...todo,
+              completed: !todo.completed,
+              completionDate: !todo.completed ? new Date() : null,
+            }
+          : todo,
+      ),
+    )
   }
 
   const deleteTodo = (id: string) => {
@@ -69,9 +128,72 @@ export default function App() {
   }
 
   const editTodo = (id: string, newText: string, newDueDate: string) => {
-    setTodos(todos.map(todo => 
-      todo.id === id ? { ...todo, text: newText, dueDate: new Date(newDueDate) } : todo
-    ))
+    setTodos(
+      todos.map(todo =>
+        todo.id === id ? { ...todo, text: newText, dueDate: new Date(newDueDate) } : todo,
+      ),
+    )
+  }
+
+  const toggleSubItem = (todoId: string, subItemId: string) => {
+    setTodos(
+      todos.map(todo => {
+        if (todo.id === todoId) {
+          return {
+            ...todo,
+            subItems: todo.subItems.map(subItem =>
+              subItem.id === subItemId ? { ...subItem, completed: !subItem.completed } : subItem,
+            ),
+          }
+        }
+        return todo
+      }),
+    )
+  }
+
+  const handleOpenModal = () => {
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setNewTodoText('')
+    setNewTodoDueDate(formatDate(new Date()))
+    setNewTodoSubItems([])
+    setCurrentSubItemInput('')
+  }
+
+  const handleAddNewTodo = () => {
+    if (!newTodoText.trim()) return
+
+    const newTodo: Todo = {
+      id: Date.now().toString(),
+      text: newTodoText.trim(),
+      completed: false,
+      dueDate: new Date(newTodoDueDate),
+      completionDate: null,
+      subItems: newTodoSubItems.map((subItemText, index) => ({
+        id: `${Date.now().toString()}-${index}`,
+        text: subItemText.trim(),
+        completed: false,
+      })),
+    }
+
+    setTodos([...todos, newTodo])
+    handleCloseModal()
+  }
+
+  const handleAddSubItem = () => {
+    if (currentSubItemInput.trim()) {
+      setNewTodoSubItems([...newTodoSubItems, currentSubItemInput.trim()])
+      setCurrentSubItemInput('')
+    }
+  }
+
+  const handleDeleteSubItem = (index: number) => {
+    const updatedSubItems = [...newTodoSubItems]
+    updatedSubItems.splice(index, 1)
+    setNewTodoSubItems(updatedSubItems)
   }
 
   return (
@@ -84,30 +206,89 @@ export default function App() {
               ({todos.filter(todo => !todo.completed).length} active)
             </span>
           </h1>
-          
-          <form onSubmit={addTodo} className="space-y-2">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Add a new todo"
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Add
-              </button>
+
+          <div className="flex justify-end">
+            <button
+              onClick={handleOpenModal}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              <Plus className="h-4 w-4 mr-2 inline-block" /> Add Todo
+            </button>
+          </div>
+
+          {/* Modal */}
+          {isModalOpen && (
+            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+              <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div className="mt-3 text-center">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">Add New Todo</h3>
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      placeholder="Todo text"
+                      value={newTodoText}
+                      onChange={e => setNewTodoText(e.target.value)}
+                      className="mt-1 px-4 py-2 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="date"
+                      value={newTodoDueDate}
+                      onChange={e => setNewTodoDueDate(e.target.value)}
+                      className="mt-2 px-4 py-2 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+
+                    <div className="mt-2">
+                      <label className="block text-gray-700 text-sm font-bold mb-2">Sub-items:</label>
+                      <ul>
+                        {newTodoSubItems.map((subItem, index) => (
+                          <li key={index} className="flex items-center justify-between py-1">
+                            <span>{subItem}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteSubItem(index)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="flex gap-2 mt-2">
+                        <input
+                          type="text"
+                          placeholder="Add sub-item"
+                          value={currentSubItemInput}
+                          onChange={e => setCurrentSubItemInput(e.target.value)}
+                          className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 flex-grow"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddSubItem}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="items-center px-4 py-3">
+                  <button
+                    className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    onClick={handleAddNewTodo}
+                  >
+                    Add Todo
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 ml-2"
+                    onClick={handleCloseModal}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             </div>
-          </form>
+          )}
 
           <div className="space-y-2">
             {todos.map(todo => {
@@ -131,9 +312,27 @@ export default function App() {
                       <span className={`text-sm ${todo.completed ? 'line-through' : ''}`}>
                         {todo.text}
                       </span>
-                      <span className="text-xs">
-                        Due: {formatDate(todo.dueDate)}
-                      </span>
+                      <span className="text-xs">Due: {formatDate(todo.dueDate)}</span>
+                      {todo.completionDate && (
+                        <span className="text-xs">Completed: {formatDate(todo.completionDate)}</span>
+                      )}
+                      {todo.subItems.length > 0 && (
+                        <div className="mt-2">
+                          {todo.subItems.map(subItem => (
+                            <div key={subItem.id} className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={subItem.completed}
+                                onChange={() => toggleSubItem(todo.id, subItem.id)}
+                                className="mr-2"
+                              />
+                              <span className={`text-xs ${subItem.completed ? 'line-through' : ''}`}>
+                                {subItem.text}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
