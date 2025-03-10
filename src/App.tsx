@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Trash2, Edit, Check, X, Calendar, Plus } from 'lucide-react'
+import TodoItem from './components/TodoItem'
 
 interface SubItem {
   id: string
@@ -197,11 +198,11 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-lg mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
-          <h1 className="text-2xl font-bold text-gray-800">
-            Todo List
+    <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto">
+        <div className="bg-white rounded-lg shadow-xl p-8 space-y-6">
+          <h1 className="text-3xl font-extrabold text-gray-900">
+            TaskMaster
             <span className="text-sm font-normal text-gray-500 ml-2">
               ({todos.filter(todo => !todo.completed).length} active)
             </span>
@@ -210,35 +211,35 @@ export default function App() {
           <div className="flex justify-end">
             <button
               onClick={handleOpenModal}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+              className="px-4 py-2 font-semibold text-white bg-blue-500 rounded-md hover:bg-blue-700 transition-colors"
             >
-              <Plus className="h-4 w-4 mr-2 inline-block" /> Add Todo
+              <Plus className="h-5 w-5 mr-2 inline-block" /> Add Task
             </button>
           </div>
 
           {/* Modal */}
           {isModalOpen && (
-            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-              <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+              <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
                 <div className="mt-3 text-center">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">Add New Todo</h3>
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">Add New Task</h3>
                   <div className="mt-2">
                     <input
                       type="text"
-                      placeholder="Todo text"
+                      placeholder="Task text"
                       value={newTodoText}
                       onChange={e => setNewTodoText(e.target.value)}
-                      className="mt-1 px-4 py-2 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="mt-1 px-4 py-2 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                     <input
                       type="date"
                       value={newTodoDueDate}
                       onChange={e => setNewTodoDueDate(e.target.value)}
-                      className="mt-2 px-4 py-2 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="mt-2 px-4 py-2 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
 
                     <div className="mt-2">
-                      <label className="block text-gray-700 text-sm font-bold mb-2">Sub-items:</label>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">Sub-tasks:</label>
                       <ul>
                         {newTodoSubItems.map((subItem, index) => (
                           <li key={index} className="flex items-center justify-between py-1">
@@ -256,15 +257,15 @@ export default function App() {
                       <div className="flex gap-2 mt-2">
                         <input
                           type="text"
-                          placeholder="Add sub-item"
+                          placeholder="Add sub-task"
                           value={currentSubItemInput}
                           onChange={e => setCurrentSubItemInput(e.target.value)}
-                          className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 flex-grow"
+                          className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 flex-grow"
                         />
                         <button
                           type="button"
                           onClick={handleAddSubItem}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                          className="px-4 py-2 font-semibold text-white bg-indigo-500 rounded-md hover:bg-indigo-700 transition-colors"
                         >
                           Add
                         </button>
@@ -274,13 +275,13 @@ export default function App() {
                 </div>
                 <div className="items-center px-4 py-3">
                   <button
-                    className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="px-4 py-2 font-semibold text-white bg-green-500 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                     onClick={handleAddNewTodo}
                   >
-                    Add Todo
+                    Add Task
                   </button>
                   <button
-                    className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 ml-2"
+                    className="px-4 py-2 font-semibold text-white bg-red-500 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 ml-2"
                     onClick={handleCloseModal}
                   >
                     Cancel
@@ -290,74 +291,20 @@ export default function App() {
             </div>
           )}
 
-          <div className="space-y-2">
-            {todos.map(todo => {
-              const status = getStatus(todo.dueDate)
-              const statusColor = getStatusColor(status)
-              return (
-                <div
-                  key={todo.id}
-                  className={`flex items-center justify-between p-4 rounded-md transition-all ${statusColor} ${
-                    todo.completed ? 'opacity-50' : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    <button
-                      onClick={() => toggleTodo(todo.id)}
-                      className="text-gray-500 hover:text-green-600 transition-colors"
-                    >
-                      <Check className={`w-5 h-5 ${todo.completed ? 'text-green-600' : ''}`} />
-                    </button>
-                    <div className="flex flex-col">
-                      <span className={`text-sm ${todo.completed ? 'line-through' : ''}`}>
-                        {todo.text}
-                      </span>
-                      <span className="text-xs">Due: {formatDate(todo.dueDate)}</span>
-                      {todo.completionDate && (
-                        <span className="text-xs">Completed: {formatDate(todo.completionDate)}</span>
-                      )}
-                      {todo.subItems.length > 0 && (
-                        <div className="mt-2">
-                          {todo.subItems.map(subItem => (
-                            <div key={subItem.id} className="flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={subItem.completed}
-                                onChange={() => toggleSubItem(todo.id, subItem.id)}
-                                className="mr-2"
-                              />
-                              <span className={`text-xs ${subItem.completed ? 'line-through' : ''}`}>
-                                {subItem.text}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        const newText = prompt('Edit todo:', todo.text)
-                        const newDueDate = prompt('Edit due date:', formatDate(todo.dueDate))
-                        if (newText && newDueDate) {
-                          editTodo(todo.id, newText, newDueDate)
-                        }
-                      }}
-                      className="text-gray-500 hover:text-blue-600 transition-colors"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => deleteTodo(todo.id)}
-                      className="text-gray-500 hover:text-red-600 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
+          <div className="space-y-3">
+            {todos.map(todo => (
+              <TodoItem
+                key={todo.id}
+                todo={todo}
+                toggleTodo={toggleTodo}
+                deleteTodo={deleteTodo}
+                editTodo={editTodo}
+                toggleSubItem={toggleSubItem}
+                formatDate={formatDate}
+                getStatus={getStatus}
+                getStatusColor={getStatusColor}
+              />
+            ))}
           </div>
         </div>
       </div>
