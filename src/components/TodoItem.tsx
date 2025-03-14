@@ -6,7 +6,7 @@ interface TodoItemProps {
   todo: Todo
   toggleTodo: (id: string) => void
   deleteTodo: (id: string) => void
-  editTodo: (id: string, newText: string, newDueDate: string) => void
+  editTodo: (todo: Todo) => void
   toggleSubItem: (todoId: string, subItemId: string) => void
   formatDate: (date: Date) => string
   getStatus: (dueDate: Date) => 'overdue' | 'due' | 'upcoming'
@@ -68,13 +68,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
       </div>
       <div className="flex items-center gap-2">
         <button
-          onClick={() => {
-            const newText = prompt('Editar tarefa:', todo.text)
-            const newDueDate = prompt('Editar prazo:', formatDate(todo.dueDate))
-            if (newText && newDueDate) {
-              editTodo(todo.id, newText, newDueDate)
-            }
-          }}
+          onClick={() => editTodo(todo)}
           className="text-gray-500 hover:text-blue-600 transition-colors"
         >
           <Edit className="w-4 h-4" />

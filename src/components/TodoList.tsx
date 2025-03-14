@@ -5,12 +5,12 @@ import { Todo, TodoList as TodoListType } from '../types'
 
 interface TodoListProps {
   list: TodoListType
-  onAddTodo: (listId: string, todo: Todo) => void
+  onAddTodo: (listId: string) => void
   onDeleteList: (listId: string) => void
   onUpdateListTitle: (listId: string, newTitle: string) => void
   toggleTodo: (listId: string, todoId: string) => void
   deleteTodo: (listId: string, todoId: string) => void
-  editTodo: (listId: string, todoId: string, newText: string, newDueDate: string) => void
+  editTodo: (listId: string, todo: Todo) => void
   toggleSubItem: (listId: string, todoId: string, subItemId: string) => void
   formatDate: (date: Date) => string
   getStatus: (dueDate: Date) => 'overdue' | 'due' | 'upcoming'
@@ -49,18 +49,6 @@ const TodoList: React.FC<TodoListProps> = ({
     if (e.key === 'Enter') {
       handleTitleSave()
     }
-  }
-
-  const handleAddTodo = () => {
-    const newTodo: Todo = {
-      id: Date.now().toString(),
-      text: 'Nova tarefa',
-      completed: false,
-      dueDate: new Date(),
-      completionDate: null,
-      subItems: []
-    }
-    onAddTodo(list.id, newTodo)
   }
 
   return (
@@ -119,7 +107,7 @@ const TodoList: React.FC<TodoListProps> = ({
             todo={todo}
             toggleTodo={(todoId) => toggleTodo(list.id, todoId)}
             deleteTodo={(todoId) => deleteTodo(list.id, todoId)}
-            editTodo={(todoId, newText, newDueDate) => editTodo(list.id, todoId, newText, newDueDate)}
+            editTodo={(todo) => editTodo(list.id, todo)}
             toggleSubItem={(todoId, subItemId) => toggleSubItem(list.id, todoId, subItemId)}
             formatDate={formatDate}
             getStatus={getStatus}
@@ -129,7 +117,7 @@ const TodoList: React.FC<TodoListProps> = ({
       </div>
       
       <button
-        onClick={handleAddTodo}
+        onClick={() => onAddTodo(list.id)}
         className="flex items-center justify-center w-full py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
       >
         <Plus size={18} className="mr-1" />

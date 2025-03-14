@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Plus } from 'lucide-react'
 import Board from './components/Board'
-import { Todo, TodoList, AppState } from './types'
+import { Todo, TodoList, AppState, SubItem } from './types'
 import { saveToLocalStorage, getInitialState } from './utils/localStorage'
 
 const formatDate = (date: Date): string => {
@@ -46,12 +46,23 @@ const getStatusColor = (status: 'overdue' | 'due' | 'upcoming'): string => {
 
 export default function App() {
   const [appState, setAppState] = useState<AppState>(getInitialState)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  
+  // Estado para o modal de adicionar tarefa
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [newTodoText, setNewTodoText] = useState('')
   const [newTodoDueDate, setNewTodoDueDate] = useState(formatDate(new Date()))
   const [newTodoSubItems, setNewTodoSubItems] = useState<string[]>([])
   const [currentSubItemInput, setCurrentSubItemInput] = useState('')
   const [selectedListId, setSelectedListId] = useState<string | null>(null)
+  
+  // Estado para o modal de editar tarefa
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editingTodo, setEditingTodo] = useState<Todo | null>(null)
+  const [editingListId, setEditingListId] = useState<string | null>(null)
+  const [editTodoText, setEditTodoText] = useState('')
+  const [editTodoDueDate, setEditTodoDueDate] = useState('')
+  const [editTodoSubItems, setEditTodoSubItems] = useState<SubItem[]>([])
+  const [editSubItemInput, setEditSubItemInput] = useState('')
 
   // Salvar no localStorage sempre que o estado mudar
   useEffect(() => {
@@ -155,6 +166,30 @@ export default function App() {
     }))
   }
 
+  const updateTodoWithSubItems = (listId: string, todoId: string, newText: string, newDueDate: string, subItems: SubItem[]) => {
+    setAppState(prevState => ({
+      ...prevState,
+      lists: prevState.lists.map(list => {
+        if (list.id === listId) {
+          return {
+            ...list,
+            todos: list.todos.map(todo =>
+              todo.id === todoId 
+                ? { 
+                    ...todo, 
+                    text: newText, 
+                    dueDate: new Date(newDueDate),
+                    subItems: subItems
+                  } 
+                : todo
+            )
+          }
+        }
+        return list
+      })
+    }))
+  }
+
   const toggleSubItem = (listId: string, todoId: string, subItemId: string) => {
     setAppState(prevState => ({
       ...prevState,
@@ -182,13 +217,14 @@ export default function App() {
     }))
   }
 
-  const handleOpenModal = (listId: string) => {
+  // Funções para o modal de adicionar tarefa
+  const handleOpenAddModal = (listId: string) => {
     setSelectedListId(listId)
-    setIsModalOpen(true)
+    setIsAddModalOpen(true)
   }
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false)
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false)
     setNewTodoText('')
     setNewTodoDueDate(formatDate(new Date()))
     setNewTodoSubItems([])
@@ -213,7 +249,7 @@ export default function App() {
     }
 
     addTodo(selectedListId, newTodo)
-    handleCloseModal()
+    handleCloseAddModal()
   }
 
   const handleAddSubItem = () => {
@@ -229,6 +265,64 @@ export default function App() {
     setNewTodoSubItems(updatedSubItems)
   }
 
+  // Funções para o modal de editar tarefa
+  const handleOpenEditModal = (listId: string, todo: Todo) => {
+    setEditingListId(listId)
+    setEditingTodo(todo)
+    setEditTodoText(todo.text)
+    setEditTodoDueDate(formatDate(todo.dueDate))
+    setEditTodoSubItems([...todo.subItems])
+    setIsEditModalOpen(true)
+  }
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false)
+    setEditingTodo(null)
+    setEditingListId(null)
+    setEditTodoText('')
+    setEditTodoDueDate('')
+    setEditTodoSubItems([])
+    setEditSubItemInput('')
+  }
+
+  const handleSaveEditedTodo = () => {
+    if (!editTodoText.trim() || !editingListId || !editingTodo) return
+
+    updateTodoWithSubItems(
+      editingListId,
+      editingTodo.id,
+      editTodoText,
+      editTodoDueDate,
+      editTodoSubItems
+    )
+
+    handleCloseEditModal()
+  }
+
+  const handleAddEditSubItem = () => {
+    if (editSubItemInput.trim()) {
+      const newSubItem: SubItem = {
+        id: `${Date.now().toString()}-${editTodoSubItems.length}`,
+        text: editSubItemInput.trim(),
+        completed: false
+      }
+      setEditTodoSubItems([...editTodoSubItems, newSubItem])
+      setEditSubItemInput('')
+    }
+  }
+
+  const handleDeleteEditSubItem = (subItemId: string) => {
+    setEditTodoSubItems(editTodoSubItems.filter(item => item.id !== subItemId))
+  }
+
+  const handleToggleEditSubItem = (subItemId: string) => {
+    setEditTodoSubItems(
+      editTodoSubItems.map(item =>
+        item.id === subItemId ? { ...item, completed: !item.completed } : item
+      )
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8 flex flex-col">
       <div className="max-w-7xl mx-auto w-full flex-grow">
@@ -236,12 +330,12 @@ export default function App() {
           <Board
             lists={appState.lists}
             onAddList={addList}
-            onAddTodo={addTodo}
+            onAddTodo={handleOpenAddModal}
             onDeleteList={deleteList}
             onUpdateListTitle={updateListTitle}
             toggleTodo={toggleTodo}
             deleteTodo={deleteTodo}
-            editTodo={editTodo}
+            editTodo={handleOpenEditModal}
             toggleSubItem={toggleSubItem}
             formatDate={formatDate}
             getStatus={getStatus}
@@ -251,7 +345,7 @@ export default function App() {
       </div>
 
       {/* Modal para adicionar nova tarefa */}
-      {isModalOpen && (
+      {isAddModalOpen && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div className="mt-3 text-center">
@@ -317,7 +411,93 @@ export default function App() {
               </button>
               <button
                 className="px-4 py-2 font-semibold text-white bg-red-500 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-                onClick={handleCloseModal}
+                onClick={handleCloseAddModal}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para editar tarefa */}
+      {isEditModalOpen && editingTodo && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <div className="mt-3 text-center">
+              <h3 className="text-lg leading-6 font-medium text-gray-900">Editar Tarefa</h3>
+              <div className="mt-2">
+                <input
+                  type="text"
+                  placeholder="Texto da tarefa"
+                  value={editTodoText}
+                  onChange={e => setEditTodoText(e.target.value)}
+                  className="mt-1 px-4 py-2 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <input
+                  type="date"
+                  value={editTodoDueDate}
+                  onChange={e => setEditTodoDueDate(e.target.value)}
+                  className="mt-2 px-4 py-2 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+
+                <div className="mt-2">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">Sub-tarefas:</label>
+                  <ul className="max-h-40 overflow-y-auto">
+                    {editTodoSubItems.map((subItem) => (
+                      <li key={subItem.id} className="flex items-center justify-between py-1">
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={subItem.completed}
+                            onChange={() => handleToggleEditSubItem(subItem.id)}
+                            className="mr-2 h-4 w-4"
+                          />
+                          <span className={subItem.completed ? 'line-through text-gray-500' : ''}>
+                            {subItem.text}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteEditSubItem(subItem.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="flex gap-2 mt-2">
+                    <input
+                      type="text"
+                      placeholder="Adicionar sub-tarefa"
+                      value={editSubItemInput}
+                      onChange={e => setEditSubItemInput(e.target.value)}
+                      className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 flex-grow"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddEditSubItem}
+                      className="px-4 py-2 font-semibold text-white bg-indigo-500 rounded-md hover:bg-indigo-700 transition-colors"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="items-center px-4 py-3 flex justify-end gap-2 mt-4">
+              <button
+                className="px-4 py-2 font-semibold text-white bg-green-500 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                onClick={handleSaveEditedTodo}
+              >
+                Salvar
+              </button>
+              <button
+                className="px-4 py-2 font-semibold text-white bg-red-500 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                onClick={handleCloseEditModal}
               >
                 Cancelar
               </button>
