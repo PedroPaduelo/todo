@@ -29,7 +29,30 @@ export const loadFromLocalStorage = (): AppState | null => {
   try {
     const serializedState = localStorage.getItem('taskmaster-state')
     if (!serializedState) return null
-    return JSON.parse(serializedState, reviver)
+    
+    // Parse com reviver para converter objetos de data de volta para instâncias de Date
+    const parsedState = JSON.parse(serializedState, reviver)
+    
+    // Garantir que todas as datas sejam instâncias de Date
+    if (parsedState && parsedState.lists) {
+      parsedState.lists.forEach((list: TodoList) => {
+        if (list.todos) {
+          list.todos.forEach(todo => {
+            // Garantir que dueDate seja uma instância de Date
+            if (todo.dueDate && !(todo.dueDate instanceof Date)) {
+              todo.dueDate = new Date(todo.dueDate);
+            }
+            
+            // Garantir que completionDate seja uma instância de Date ou null
+            if (todo.completionDate && !(todo.completionDate instanceof Date)) {
+              todo.completionDate = new Date(todo.completionDate);
+            }
+          });
+        }
+      });
+    }
+    
+    return parsedState;
   } catch (error) {
     console.error('Erro ao carregar do localStorage:', error)
     return null

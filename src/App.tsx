@@ -5,13 +5,27 @@ import { Todo, TodoList, AppState } from './types'
 import { saveToLocalStorage, getInitialState } from './utils/localStorage'
 
 const formatDate = (date: Date): string => {
-  return date.toISOString().split('T')[0]
+  // Verificar se date é uma instância de Date
+  if (!(date instanceof Date)) {
+    // Se não for, tentar converter para Date
+    date = new Date(date);
+  }
+  
+  try {
+    return date.toISOString().split('T')[0];
+  } catch (error) {
+    console.error('Erro ao formatar data:', error, date);
+    // Retornar uma data padrão em caso de erro
+    return new Date().toISOString().split('T')[0];
+  }
 }
 
 const getStatus = (dueDate: Date): 'overdue' | 'due' | 'upcoming' => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const due = new Date(dueDate)
+  
+  // Garantir que dueDate seja uma instância de Date
+  const due = dueDate instanceof Date ? new Date(dueDate) : new Date(dueDate);
   due.setHours(0, 0, 0, 0)
 
   if (due < today) return 'overdue'
