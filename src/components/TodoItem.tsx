@@ -1,20 +1,6 @@
 import React from 'react'
 import { Trash2, Edit, Check } from 'lucide-react'
-
-interface SubItem {
-  id: string
-  text: string
-  completed: boolean
-}
-
-interface Todo {
-  id: string
-  text: string
-  completed: boolean
-  dueDate: Date
-  completionDate: Date | null
-  subItems: SubItem[]
-}
+import { Todo, SubItem } from '../types'
 
 interface TodoItemProps {
   todo: Todo
@@ -42,36 +28,36 @@ const TodoItem: React.FC<TodoItemProps> = ({
 
   return (
     <div
-      className={`flex items-center justify-between p-5 rounded-md shadow-md transition-all ${statusColor} ${
+      className={`flex items-center justify-between p-3 rounded-md shadow-sm transition-all ${statusColor} ${
         todo.completed ? 'opacity-50' : ''
       }`}
     >
-      <div className="flex items-center gap-4 flex-1">
+      <div className="flex items-center gap-3 flex-1">
         <button
           onClick={() => toggleTodo(todo.id)}
           className="text-gray-500 hover:text-green-600 transition-colors"
         >
-          <Check className={`w-6 h-6 ${todo.completed ? 'text-green-600' : ''}`} />
+          <Check className={`w-5 h-5 ${todo.completed ? 'text-green-600' : ''}`} />
         </button>
         <div className="flex flex-col">
-          <span className={`text-lg font-semibold ${todo.completed ? 'line-through' : ''}`}>
+          <span className={`text-sm font-semibold ${todo.completed ? 'line-through' : ''}`}>
             {todo.text}
           </span>
-          <span className="text-sm text-gray-500">Due: {formatDate(todo.dueDate)}</span>
+          <span className="text-xs text-gray-500">Prazo: {formatDate(todo.dueDate)}</span>
           {todo.completionDate && (
-            <span className="text-sm text-gray-500">Completed: {formatDate(todo.completionDate)}</span>
+            <span className="text-xs text-gray-500">Concluído: {formatDate(todo.completionDate)}</span>
           )}
           {todo.subItems.length > 0 && (
-            <div className="mt-2">
+            <div className="mt-1">
               {todo.subItems.map(subItem => (
                 <div key={subItem.id} className="flex items-center">
                   <input
                     type="checkbox"
                     checked={subItem.completed}
                     onChange={() => toggleSubItem(todo.id, subItem.id)}
-                    className="mr-2"
+                    className="mr-1 h-3 w-3"
                   />
-                  <span className={`text-sm ${subItem.completed ? 'line-through' : ''}`}>
+                  <span className={`text-xs ${subItem.completed ? 'line-through' : ''}`}>
                     {subItem.text}
                   </span>
                 </div>
@@ -80,24 +66,24 @@ const TodoItem: React.FC<TodoItemProps> = ({
           )}
         </div>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <button
           onClick={() => {
-            const newText = prompt('Edit task:', todo.text)
-            const newDueDate = prompt('Edit due date:', formatDate(todo.dueDate))
+            const newText = prompt('Editar tarefa:', todo.text)
+            const newDueDate = prompt('Editar prazo:', formatDate(todo.dueDate))
             if (newText && newDueDate) {
               editTodo(todo.id, newText, newDueDate)
             }
           }}
           className="text-gray-500 hover:text-blue-600 transition-colors"
         >
-          <Edit className="w-5 h-5" />
+          <Edit className="w-4 h-4" />
         </button>
         <button
           onClick={() => deleteTodo(todo.id)}
           className="text-gray-500 hover:text-red-600 transition-colors"
         >
-          <Trash2 className="w-5 h-5" />
+          <Trash2 className="w-4 h-4" />
         </button>
       </div>
     </div>
